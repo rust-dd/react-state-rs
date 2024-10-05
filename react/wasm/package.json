@@ -1,0 +1,15 @@
+{
+  "name": "react-state-rs",
+  "type": "module",
+  "version": "0.1.0",
+  "files": [
+    "react_state_rs_bg.wasm",
+    "react_state_rs.js",
+    "react_state_rs.d.ts"
+  ],
+  "main": "react_state_rs.js",
+  "types": "react_state_rs.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}
