@@ -20,6 +20,15 @@ function takeObject(idx) {
     return ret;
 }
 
+function addHeapObject(obj) {
+    if (heap_next === heap.length) heap.push(heap.length + 1);
+    const idx = heap_next;
+    heap_next = heap[idx];
+
+    heap[idx] = obj;
+    return idx;
+}
+
 const cachedTextDecoder = (typeof TextDecoder !== 'undefined' ? new TextDecoder('utf-8', { ignoreBOM: true, fatal: true }) : { decode: () => { throw Error('TextDecoder not available') } } );
 
 if (typeof TextDecoder !== 'undefined') { cachedTextDecoder.decode(); };
@@ -36,15 +45,6 @@ function getUint8ArrayMemory0() {
 function getStringFromWasm0(ptr, len) {
     ptr = ptr >>> 0;
     return cachedTextDecoder.decode(getUint8ArrayMemory0().subarray(ptr, ptr + len));
-}
-
-function addHeapObject(obj) {
-    if (heap_next === heap.length) heap.push(heap.length + 1);
-    const idx = heap_next;
-    heap_next = heap[idx];
-
-    heap[idx] = obj;
-    return idx;
 }
 
 let WASM_VECTOR_LEN = 0;
@@ -224,13 +224,10 @@ export class State {
         return takeObject(ret);
     }
     /**
-    * @param {string} key
     * @returns {any}
     */
-    get_key(key) {
-        const ptr0 = passStringToWasm0(key, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-        const len0 = WASM_VECTOR_LEN;
-        const ret = wasm.state_get_key(this.__wbg_ptr, ptr0, len0);
+    get_initial() {
+        const ret = wasm.state_get_initial(this.__wbg_ptr);
         return takeObject(ret);
     }
     /**
@@ -238,32 +235,6 @@ export class State {
     */
     set(state) {
         wasm.state_set(this.__wbg_ptr, addHeapObject(state));
-    }
-    /**
-    * @param {string} key
-    * @param {any} value
-    */
-    insert(key, value) {
-        const ptr0 = passStringToWasm0(key, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-        const len0 = WASM_VECTOR_LEN;
-        wasm.state_insert(this.__wbg_ptr, ptr0, len0, addHeapObject(value));
-    }
-    /**
-    * @param {string} key
-    * @param {any} value
-    */
-    update(key, value) {
-        const ptr0 = passStringToWasm0(key, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-        const len0 = WASM_VECTOR_LEN;
-        wasm.state_update(this.__wbg_ptr, ptr0, len0, addHeapObject(value));
-    }
-    /**
-    * @param {string} key
-    */
-    remove(key) {
-        const ptr0 = passStringToWasm0(key, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-        const len0 = WASM_VECTOR_LEN;
-        wasm.state_remove(this.__wbg_ptr, ptr0, len0);
     }
     /**
     */
@@ -308,6 +279,10 @@ function __wbg_get_imports() {
     imports.wbg = {};
     imports.wbg.__wbindgen_object_drop_ref = function(arg0) {
         takeObject(arg0);
+    };
+    imports.wbg.__wbindgen_object_clone_ref = function(arg0) {
+        const ret = getObject(arg0);
+        return addHeapObject(ret);
     };
     imports.wbg.__wbindgen_is_string = function(arg0) {
         const ret = typeof(getObject(arg0)) === 'string';
@@ -367,10 +342,6 @@ function __wbg_get_imports() {
     };
     imports.wbg.__wbindgen_number_new = function(arg0) {
         const ret = arg0;
-        return addHeapObject(ret);
-    };
-    imports.wbg.__wbindgen_object_clone_ref = function(arg0) {
-        const ret = getObject(arg0);
         return addHeapObject(ret);
     };
     imports.wbg.__wbindgen_string_new = function(arg0, arg1) {

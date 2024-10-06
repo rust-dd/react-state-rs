@@ -13,28 +13,13 @@ export class State {
 */
   get(): any;
 /**
-* @param {string} key
 * @returns {any}
 */
-  get_key(key: string): any;
+  get_initial(): any;
 /**
 * @param {any} state
 */
   set(state: any): void;
-/**
-* @param {string} key
-* @param {any} value
-*/
-  insert(key: string, value: any): void;
-/**
-* @param {string} key
-* @param {any} value
-*/
-  update(key: string, value: any): void;
-/**
-* @param {string} key
-*/
-  remove(key: string): void;
 /**
 */
   clear(): void;
@@ -47,11 +32,8 @@ export interface InitOutput {
   readonly __wbg_state_free: (a: number, b: number) => void;
   readonly state_new: (a: number) => number;
   readonly state_get: (a: number) => number;
-  readonly state_get_key: (a: number, b: number, c: number) => number;
+  readonly state_get_initial: (a: number) => number;
   readonly state_set: (a: number, b: number) => void;
-  readonly state_insert: (a: number, b: number, c: number, d: number) => void;
-  readonly state_update: (a: number, b: number, c: number, d: number) => void;
-  readonly state_remove: (a: number, b: number, c: number) => void;
   readonly state_clear: (a: number) => void;
   readonly __wbindgen_malloc: (a: number, b: number) => number;
   readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;

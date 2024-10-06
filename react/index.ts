@@ -1,62 +1,60 @@
-import { useSyncExternalStore } from "react";
-import init, { State } from "./wasm/react_state_rs";
+import {useSyncExternalStore} from "react";
+import init, {State} from "./wasm/react_state_rs";
 
 await init({});
 
-function createStore(initialState: any) {
-  const store = new State(initialState);
+type StateCreator<T> = {
+  getState: () => T;
+  getInitialState: () => T;
+  setState: (newState: T) => void;
+  subscribe: (listener: () => void) => () => void;
+};
 
-  const subscribers = new Set<() => void>();
+type UseBoundStore<T> = (<S>(selector: (state: T) => S) => S) & StateCreator<T>;
 
-  const getSnapshot = () => store;
+function identity<T>(arg: T): T {
+  return arg;
+}
 
-  const subscribe = (callback: () => void) => {
-    subscribers.add(callback);
-    return () => subscribers.delete(callback);
-  };
-
-  const notify = () => {
-    subscribers.forEach((callback) => callback());
-  };
-
-  const updateStore = (newState: any) => {
-    store.set(newState); // Frissíti az állapotot
-    notify(); // Értesít minden feliratkozót
-  };
-
-  const updateKey = (key: string, value: any) => {
-    store.update(key, value);
-    notify(); // Értesítés minden feliratkozónak
-  };
-
-  const useStore = () => {
-    return useSyncExternalStore(subscribe, getSnapshot);
-  };
-
-  const useSelector = (selector: (state: any) => any) => {
-    return useSyncExternalStore(subscribe, () => selector(store.get()));
-  };
+function createStore<T>(initialState: T): StateCreator<T> {
+  const state = new State(initialState);
+  const listeners = new Set<() => void>();
 
   return {
-    useStore,
-    useSelector,
-    get: () => store.get(),
-    getKey: (key: string) => store.get_key(key),
-    set: (newState: any) => updateStore(newState),
-    insert: (key: string, value: any) => {
-      store.insert(key, value);
-      notify();
+    // TODO: need to check the performance of this
+    getState: () => Object.fromEntries(state.get() as Map<string, any>) as T,
+    // TODO: need to check the performance of this
+    getInitialState: () =>
+      Object.fromEntries(state.get_initial() as Map<string, any>) as T,
+    setState: (newState: T) => {
+      state.set(newState);
+      listeners.forEach((listener) => listener());
     },
-    update: (key: string, value: any) => updateKey(key, value),
-    remove: (key: string) => {
-      store.remove(key);
-      notify();
-    },
-    clear: () => {
-      store.clear();
-      notify();
+    subscribe: (listener: () => void) => {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
     },
   };
 }
 
-export { createStore };
+function useStore<T, StateSlice>(
+  api: StateCreator<T>,
+  selector: (state: T) => StateSlice = identity as any,
+) {
+  const slice = useSyncExternalStore(api.subscribe, () =>
+    selector(api.getState() as T),
+  );
+  return slice;
+}
+
+function create<T>(initialState: T): UseBoundStore<T> {
+  const api = createStore(initialState);
+  const useBoundStore = <S>(selector: (state: T) => S): S =>
+    useStore(api, selector);
+  Object.assign(useBoundStore, api);
+  return useBoundStore as UseBoundStore<T>;
+}
+
+export {create};
