@@ -1,4 +1,4 @@
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, RwLock};
 
 use ahash::HashMap;
 use serde_json::Value;
@@ -9,57 +9,45 @@ pub type TState = HashMap<String, Value>;
 
 #[wasm_bindgen]
 pub struct State {
-    state: Arc<Mutex<HashMap<String, Value>>>,
+    initial_state: Arc<RwLock<HashMap<String, Value>>>,
+    state: Arc<RwLock<HashMap<String, Value>>>,
 }
 
 #[wasm_bindgen]
 impl State {
     #[wasm_bindgen(constructor)]
     pub fn new(state: JsValue) -> State {
+        let initial_state = Arc::new(RwLock::new(
+            serde_wasm_bindgen::from_value::<TState>(state.clone()).unwrap(),
+        ));
+
         State {
-            state: Arc::new(Mutex::new(
-                serde_wasm_bindgen::from_value::<TState>(state).unwrap(),
-            )),
+            initial_state: Arc::clone(&initial_state),
+            state: Arc::clone(&initial_state),
         }
     }
 
     pub fn get(&self) -> JsValue {
-        let state = self.state.lock().unwrap();
+        let state = self.state.read().unwrap();
         serde_wasm_bindgen::to_value(&*state).unwrap()
     }
 
-    pub fn get_key(&self, key: &str) -> JsValue {
-        let state = self.state.lock().unwrap();
-        serde_wasm_bindgen::to_value(&state.get(key).unwrap()).unwrap()
+    pub fn get_initial(&self) -> JsValue {
+        let initial_state = self.initial_state.read().unwrap();
+        serde_wasm_bindgen::to_value(&*initial_state).unwrap()
     }
 
     pub fn set(&self, state: JsValue) {
         let _ = std::mem::replace(
-            &mut *self.state.lock().unwrap(),
+            &mut *self.state.write().unwrap(),
             serde_wasm_bindgen::from_value::<TState>(state).unwrap(),
         );
     }
 
-    pub fn insert(&self, key: String, value: JsValue) {
-        self.state
-            .lock()
-            .unwrap()
-            .insert(key, serde_wasm_bindgen::from_value(value).unwrap());
-    }
-
-    pub fn update(&self, key: String, value: JsValue) {
-        self.state
-            .lock()
-            .unwrap()
-            .entry(key)
-            .and_modify(|v| *v = serde_wasm_bindgen::from_value(value).unwrap());
-    }
-
-    pub fn remove(&self, key: &str) {
-        self.state.lock().unwrap().remove(key).unwrap();
-    }
-
     pub fn clear(&self) {
-        let _ = std::mem::replace(&mut *self.state.lock().unwrap(), HashMap::default());
+        let _ = std::mem::replace(
+            &mut *self.state.write().unwrap(),
+            self.initial_state.read().unwrap().clone(),
+        );
     }
 }
