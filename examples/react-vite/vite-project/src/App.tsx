@@ -35,13 +35,13 @@ function Rust() {
     }
 
     console.log("Rust", dayjs().diff(start, "millisecond"));
-    setRustFinished(true); // Rust művelet befejezése után állítjuk be
+    setRustFinished(true);
   }, []);
 
   return (
     <div>
       <h1>{count}</h1>
-      {rustFinished && <Zustand />} {/* Zustand csak akkor indul, ha a Rust kész */}
+      {rustFinished && <Zustand />}
     </div>
   );
 }
@@ -58,13 +58,13 @@ function Zustand() {
     }
 
     console.log("Zustand", dayjs().diff(start, "millisecond"));
-    setZustandFinished(true); // Zustand művelet befejezése után állítjuk be
+    setZustandFinished(true);
   }, []);
 
   return (
     <div>
       <h1>{zustandCount}</h1>
-      {zustandFinished && <Jotai />} {/* Jotai csak akkor indul, ha a Zustand kész */}
+      {zustandFinished && <Jotai />}
     </div>
   );
 }
